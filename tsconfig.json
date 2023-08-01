@@ -13,13 +13,20 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
+    "typeRoots": ["src/@types", "./node_modules/@types"],
 
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": "./src/",
+    "paths": {
+      "src/*": ["*"]
+    }
   },
   "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "references": [{ "path": "./tsconfig.node.json" }],
+  "exclude": ["node_modules", "coverage"]
 }
