@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    .login-main {
+        @apply bg-gray-200 h-screen flex justify-center items-center;
+    }
+
+    .login-box {
+        @apply bg-white p-4 flex flex-col w-[30%] shadow-xl;
+    }
+
+    .login-box .login-title {
+        @apply mb-2 self-center text-2xl font-bold;
+    }
+
+    .login-box .login-credentials {
+        @apply flex flex-col;
+    }
+
+    .login-box .login-credentials label {
+        @apply my-2 flex flex-col;
+    }
+
+    .login-box .login-credentials label input {
+        @apply mt-1 p-1 border border-black;
+    }
+
+    .login-box .login-buttons {
+        @apply px-4 py-2 mt-4 bg-black text-white max-w-fit;
+    }
+}
