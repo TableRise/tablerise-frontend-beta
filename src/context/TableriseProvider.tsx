@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import TableriseContext from 'src/context/TableriseContext';
-import ChildrenNode from 'src/types/Children';
+import ChildrenNode from 'src/types/shared/children';
 
 export default function TableriseProvider({ children }: ChildrenNode) {
     const [loading, setLoading] = useState<boolean>(false);
