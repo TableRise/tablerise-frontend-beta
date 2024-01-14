@@ -7,10 +7,11 @@ function App() {
   return (
     <>
       <Routes>
-        <Route element={<PrivateRoute />}></Route>
+        <Route element={<PrivateRoute />}>
+          <Route path='/match' element={<Match />} />
+        </Route>
         <Route path='/' element={<h1>TableRise</h1>} />
         <Route path='/login' element={<Login />} />
-        <Route path='/match' element={<Match />} />
       </Routes>
     </>
   );

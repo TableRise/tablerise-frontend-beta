@@ -3,11 +3,11 @@ import { Outlet, useNavigate } from 'react-router-dom';
 
 export default function PrivateRoute() {
     const navigate = useNavigate();
-    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
 
     useEffect(() => {
-        if (!token) navigate('/login', { replace: true });
-    }, [token, navigate]);
+        if (!user) navigate('/login', { replace: true });
+    }, [user, navigate]);
 
-    return token && <Outlet />;
+    return user && <Outlet />;
 }

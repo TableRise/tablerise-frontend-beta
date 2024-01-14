@@ -13,12 +13,14 @@ export default function Login() {
     });
 
     const handleLogin = async () => {
-        const { status } = await CredentialHandler({
+        const { status, data } = await CredentialHandler({
             email: loginForm.email,
             password: loginForm.password
         });
 
-        if (status !== 204) return setToggleError(true);
+        if (status !== 200) return setToggleError(true);
+
+        localStorage.setItem('user', JSON.stringify(data));
 
         navigate('/match');
     }
