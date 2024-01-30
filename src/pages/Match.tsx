@@ -1,85 +1,138 @@
-import { ReactNode, useState, useEffect } from 'react';
-import socket from 'src/connection/SocketIO';
-import newUUID from 'src/helpers/newUUID';
+import { useState, useEffect } from 'react';
+import { socket } from 'src/socket';
 import 'src/pages/styles/Match.css';
 
+export function ConnectionState({ isConnected }: any): any {
+    return <p>State: {'' + isConnected}</p>;
+}
+
+export function ConnectionManager() {
+    function connect() {
+        socket.connect();
+    }
+
+    function disconnect() {
+        socket.disconnect();
+    }
+
+    return (
+        <>
+            <button onClick={connect}>Connect</button>
+            <button onClick={disconnect}>Disconnect</button>
+        </>
+    );
+}
+
 export default function Match() {
-    const [squares, setSquares] = useState<ReactNode[]>([]);
-    const [roomId, setRoomId] = useState<string>('');
-    const [input, setInput] = useState({
-        roomName: ''
-    });
+    const [isConnected, setIsConnected] = useState(socket.connected);
+    const [roomId, setRoomId] = useState('');
+    const [formValue, setFormValue] = useState('');
+    const [avatarFormValue, setAvatarFormValue] = useState('Avatar');
+    const [avatars, setAvatars] = useState<any[]>([]);
 
     useEffect(() => {
-        socket.on('createAvatar', (room: any) => {
-            console.log('quadrado');
-            setSquares((prevState) => [...prevState, <div key={room.squareId} className="match-squares"/>]);
-        });
-    });
+        function onConnect() {
+            setIsConnected(true);
+        }
 
-    const handleCreateAvatar = () => {
-        const squareId = newUUID();
-        // setSquares((prevState) => [...prevState, <div key={squareId} className="match-squares"/>]);
+        function onDisconnect() {
+            setIsConnected(false);
+        }
 
-        const roomNewSquare = {
-            roomId,
-            roomName: input.roomName,
-            squareId
+        function onCreateRoom(value: any, value2: any, value3: string) {
+            console.info('sala ' + value + ' criada');
+            console.log(value);
+            console.log(value2);
+            setRoomId(value3);
+        }
+
+        function onJoinRoom(value: any, value2: any, value3: string) {
+            console.info('se juntou a uma sala');
+            setAvatars(value);
+            console.log(value2);
+            setRoomId(value3);
+        }
+
+        function onRoomNotFound(value: string) {
+            setRoomId(value);
+        }
+
+        function onCreatedBox(value: any) {
+            console.info('avatar ' + value.avatarName + ' criado');
+            setAvatars((previous) => [...previous, value]);
+        }
+
+        socket.on('connect', onConnect);
+        socket.on('disconnect', onDisconnect);
+        socket.on('Created a room', onCreateRoom);
+        socket.on('Joined a room', onJoinRoom);
+        socket.on('Room not found', onRoomNotFound);
+        socket.on('Created a box', onCreatedBox);
+
+        return () => {
+            socket.off('connect', onConnect);
+            socket.off('disconnect', onDisconnect);
+            socket.off('Created a room', onCreateRoom);
+            socket.off('Joined a room', onJoinRoom);
+            socket.off('Room not found', onRoomNotFound);
+            socket.off('Created a box', onCreatedBox);
         };
-
-        socket.emit('createAvatar', roomNewSquare);
-    };
+    }, []);
 
     const handleCreateRoom = () => {
-        const roomId = newUUID();
-
-        setRoomId(roomId);
-
-        const roomInfo = {
-            roomId,
-            roomName: input.roomName
-        };
-
-        socket.emit('join', roomInfo);
+        socket.timeout(5000).emit('create');
     };
-    // Ajustar tipagem
-    const handleRoomName = (event: any) => {
-        const { name, value } = event.target;
 
-        setInput({
-            ...input,
-            [name]: value
-        })
+    function handleJoinRoom(event: any) {
+        event.preventDefault();
+
+        socket.timeout(5000).emit('join', formValue, () => {});
+    }
+    const handleCreateAvatar = (event: any) => {
+        event.preventDefault();
+
+        socket.timeout(5000).emit('create box', roomId, avatarFormValue, () => {});
     };
 
     return (
         <section className="match-page">
-            <form className="match-items">
-                <input
-                    type="text"
-                    name="roomName"
-                    onChange={handleRoomName}
-                />
+            <div className="match-items">
+                <button onClick={handleCreateRoom}>Criar Sala</button>
+                <form onSubmit={handleJoinRoom}>
+                    <input onChange={(e) => setFormValue(e.target.value)} placeholder="insira o id da sala" />
 
-                <button
-                    onClick={handleCreateRoom}
-                    type="button"
-                >
-                    Entrar na sala
-                </button>
-                <button
-                    onClick={handleCreateAvatar}
-                    type="button"
-                >
-                    Criar Avatar
-                </button>
+                    <button type="submit">Entrar na sala</button>
+                </form>
+                <form onSubmit={handleCreateAvatar}>
+                    <input
+                        onChange={(e) => setAvatarFormValue(e.target.value)}
+                        placeholder="Nome do personagem"
+                        value={avatarFormValue}
+                    />
 
+                    <button type="submit">Criar Avatar</button>
+                </form>
                 <button>Excluir Avatar</button>
-            </form>
+            </div>
+
+            <div className="App">
+                <ConnectionState isConnected={isConnected} />
+                <ConnectionManager />
+            </div>
+
+            <div>
+                <p>{roomId}</p>
+            </div>
 
             <div className="match-map">
-                {squares}
+                {avatars.map((avatar, index) => (
+                    <div className="avatar" key={index}>
+                        <p>
+                            {avatar.avatarName} - {index}
+                        </p>
+                    </div>
+                ))}
             </div>
         </section>
-    )
+    );
 }

@@ -23,3 +23,9 @@
         @apply w-[10%] h-[10%] bg-red-800;
     }
 }
+
+.avatar {
+    width: 100px;
+    height: 100px;
+    background-color: blue;
+}
