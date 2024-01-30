@@ -18,4 +18,8 @@
     .match-map {
         @apply w-[70%] h-[70%] border border-black self-center;
     }
+
+    .match-squares {
+        @apply w-[10%] h-[10%] bg-red-800;
+    }
 }
