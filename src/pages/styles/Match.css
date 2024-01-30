@@ -19,3 +19,9 @@
         @apply w-[70%] h-[70%] border border-black self-center;
     }
 }
+
+.avatar {
+    width: 100px;
+    height: 100px;
+    background-color: blue;
+}
