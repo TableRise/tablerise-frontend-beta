@@ -39,18 +39,10 @@ export default function Match() {
             setIsConnected(false);
         }
 
-        function onCreateRoom(value: any, value2: any, value3: string) {
-            console.info('sala ' + value + ' criada');
-            console.log(value);
-            console.log(value2);
-            setRoomId(value3);
-        }
-
-        function onJoinRoom(value: any, value2: any, value3: string) {
+        function onJoinRoom({ objects, roomId }: any) {
             console.info('se juntou a uma sala');
-            setAvatars(value);
-            console.log(value2);
-            setRoomId(value3);
+            setAvatars(objects);
+            setRoomId(roomId);
         }
 
         function onRoomNotFound(value: string) {
@@ -64,7 +56,6 @@ export default function Match() {
 
         socket.on('connect', onConnect);
         socket.on('disconnect', onDisconnect);
-        socket.on('Created a room', onCreateRoom);
         socket.on('Joined a room', onJoinRoom);
         socket.on('Room not found', onRoomNotFound);
         socket.on('Created a box', onCreatedBox);
@@ -72,16 +63,11 @@ export default function Match() {
         return () => {
             socket.off('connect', onConnect);
             socket.off('disconnect', onDisconnect);
-            socket.off('Created a room', onCreateRoom);
             socket.off('Joined a room', onJoinRoom);
             socket.off('Room not found', onRoomNotFound);
             socket.off('Created a box', onCreatedBox);
         };
     }, []);
-
-    const handleCreateRoom = () => {
-        socket.timeout(5000).emit('create');
-    };
 
     function handleJoinRoom(event: any) {
         event.preventDefault();
@@ -97,7 +83,6 @@ export default function Match() {
     return (
         <section className="match-page">
             <div className="match-items">
-                <button onClick={handleCreateRoom}>Criar Sala</button>
                 <form onSubmit={handleJoinRoom}>
                     <input onChange={(e) => setFormValue(e.target.value)} placeholder="insira o id da sala" />
 
