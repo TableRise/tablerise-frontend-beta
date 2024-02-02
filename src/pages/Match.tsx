@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { socket } from 'src/socket';
+import { useDrag } from 'react-use-gesture';
 import 'src/pages/styles/Match.css';
 
 export function ConnectionState({ isConnected }: any): any {
@@ -29,6 +30,7 @@ export default function Match() {
     const [formValue, setFormValue] = useState('');
     const [avatarFormValue, setAvatarFormValue] = useState('Avatar');
     const [avatars, setAvatars] = useState<any[]>([]);
+    const bindAvatar = useDrag();
 
     useEffect(() => {
         function onConnect() {
@@ -36,6 +38,7 @@ export default function Match() {
         }
 
         function onDisconnect() {
+            setAvatars([]);
             setIsConnected(false);
         }
 
@@ -50,7 +53,6 @@ export default function Match() {
         }
 
         function onCreatedBox(value: any) {
-            console.info('avatar ' + value.avatarName + ' criado');
             setAvatars((previous) => [...previous, value]);
         }
 
