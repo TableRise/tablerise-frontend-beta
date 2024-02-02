@@ -77,7 +77,7 @@ export default function Match() {
     const handleCreateAvatar = (event: any) => {
         event.preventDefault();
 
-        socket.timeout(5000).emit('create box', roomId, avatarFormValue, () => {});
+        socket.timeout(5000).emit('create-box', roomId, avatarFormValue, () => {});
     };
 
     return (
