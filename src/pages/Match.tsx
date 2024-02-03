@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { socket } from 'src/socket';
-import { useDrag } from 'react-use-gesture';
+import Draggable from 'react-draggable';
 import 'src/pages/styles/Match.css';
+import newUUID from 'src/helpers/newUUID';
 
 export function ConnectionState({ isConnected }: any): any {
     return <p>State: {'' + isConnected}</p>;
@@ -30,7 +31,7 @@ export default function Match() {
     const [formValue, setFormValue] = useState('');
     const [avatarFormValue, setAvatarFormValue] = useState('Avatar');
     const [avatars, setAvatars] = useState<any[]>([]);
-    const bindAvatar = useDrag();
+    const [userId, setUserId] = useState('');
 
     useEffect(() => {
         function onConnect() {
@@ -43,7 +44,6 @@ export default function Match() {
         }
 
         function onJoinRoom({ objects, roomId }: any) {
-            console.info('se juntou a uma sala');
             setAvatars(objects);
             setRoomId(roomId);
         }
@@ -56,11 +56,23 @@ export default function Match() {
             setAvatars((previous) => [...previous, value]);
         }
 
+        function onAvatarMoved(x: any, y: any, avatarName: any) {
+            const avatarsList = [...avatars];
+
+            const avatarIndex = avatarsList.findIndex((avatar) => avatar.avatarName === avatarName);
+
+            avatarsList[avatarIndex].position.x = x;
+            avatarsList[avatarIndex].position.y = y;
+
+            setAvatars(avatarsList);
+        }
+
         socket.on('connect', onConnect);
         socket.on('disconnect', onDisconnect);
         socket.on('Joined a room', onJoinRoom);
         socket.on('Room not found', onRoomNotFound);
         socket.on('Created a box', onCreatedBox);
+        socket.on('Avatar Moved', onAvatarMoved);
 
         return () => {
             socket.off('connect', onConnect);
@@ -68,19 +80,35 @@ export default function Match() {
             socket.off('Joined a room', onJoinRoom);
             socket.off('Room not found', onRoomNotFound);
             socket.off('Created a box', onCreatedBox);
+            socket.off('Avatar Moved', onAvatarMoved);
         };
-    }, []);
+    }, [avatars]);
 
     function handleJoinRoom(event: any) {
         event.preventDefault();
-
         socket.timeout(5000).emit('join', formValue, () => {});
+        setUserId(newUUID());
     }
     const handleCreateAvatar = (event: any) => {
         event.preventDefault();
-
-        socket.timeout(5000).emit('create-box', roomId, avatarFormValue, () => {});
+        socket.timeout(5000).emit('create-box', roomId, avatarFormValue, userId, () => {});
     };
+
+    const handleStopMovement = (avatar: any, e: any, ui: any) => {
+        console.log(e);
+        socket.timeout(5000).emit('move-box', roomId, avatar.avatarName, { x: ui.x, y: ui.y }, userId)
+    }
+
+    const handleStartMovement = (avatar: any) => {
+        if (avatar.userId !== userId) {
+            return false;
+        }
+    }
+
+    // const handleRoleInput = (event: any) => {
+    //     const { value } = event.target;
+    //     setUserRole(value);
+    // }
 
     return (
         <section className="match-page">
@@ -99,10 +127,12 @@ export default function Match() {
 
                     <button type="submit">Criar Avatar</button>
                 </form>
+                {/* <input type="text" value={userRole} onChange={handleRoleInput} disabled={userId ? true : false}/> */}
                 <button>Excluir Avatar</button>
             </div>
 
             <div className="App">
+                {userId && <span>{userId}</span>}
                 <ConnectionState isConnected={isConnected} />
                 <ConnectionManager />
             </div>
@@ -112,13 +142,21 @@ export default function Match() {
             </div>
 
             <div className="match-map">
-                {avatars.map((avatar, index) => (
-                    <div className="avatar" key={index}>
-                        <p>
-                            {avatar.avatarName} - {index}
-                        </p>
-                    </div>
-                ))}
+                {avatars.map((avatar, index) => {
+                    return (<Draggable
+                        key={index}
+                        defaultPosition={{ x: avatar.position.x, y: avatar.position.y }}
+                        position={{ x: avatar.position.x, y: avatar.position.y }}
+                        onStart={() => handleStartMovement(avatar)}
+                        onStop={(e, ui) => handleStopMovement(avatar, e, ui)}
+                    >
+                        <div className="avatar">
+                            <p>
+                                {avatar.avatarName} - {index}
+                            </p>
+                        </div>
+                    </Draggable>)
+                })}
             </div>
         </section>
     );
