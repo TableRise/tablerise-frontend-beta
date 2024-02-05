@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { socket } from 'src/socket';
-import Draggable from 'react-draggable';
+import { Rnd } from 'react-rnd';
 import 'src/pages/styles/Match.css';
 import newUUID from 'src/helpers/newUUID';
+
+// Problema de renderização provavelmente tem origem no fato do emissor escutar seus próprios eventos.
 
 export function ConnectionState({ isConnected }: any): any {
     return <p>State: {'' + isConnected}</p>;
@@ -67,12 +69,38 @@ export default function Match() {
             setAvatars(avatarsList);
         }
 
+        function onBoxResized(size: any, avatarName: any) {
+            console.log('LISTEN')
+            const avatarsList = [...avatars];
+
+            console.log(size);
+            console.log(avatarName);
+
+            const avatarIndex = avatarsList.findIndex((avatar) => avatar.avatarName === avatarName);
+
+            avatarsList[avatarIndex].size.width = size.width;
+            avatarsList[avatarIndex].size.height = size.height;
+
+            setAvatars(avatarsList);
+        }
+
+        function onBoxDeleted(avatarName: any) {
+            console.log('LISTEN BOX')
+            console.log(avatarName)
+            const avatarsList = [...avatars];
+            const newAvatars = avatarsList.filter((avatar) => avatar.avatarName !== avatarName);
+            console.log(newAvatars);
+            setAvatars(newAvatars);
+        }
+
         socket.on('connect', onConnect);
         socket.on('disconnect', onDisconnect);
         socket.on('Joined a room', onJoinRoom);
         socket.on('Room not found', onRoomNotFound);
         socket.on('Created a box', onCreatedBox);
         socket.on('Avatar Moved', onAvatarMoved);
+        socket.on('Box Resized', onBoxResized);
+        socket.on('Box Deleted', onBoxDeleted);
 
         return () => {
             socket.off('connect', onConnect);
@@ -81,6 +109,8 @@ export default function Match() {
             socket.off('Room not found', onRoomNotFound);
             socket.off('Created a box', onCreatedBox);
             socket.off('Avatar Moved', onAvatarMoved);
+            socket.off('Box Resized', onBoxResized);
+            socket.off('Box Deleted', onBoxDeleted);
         };
     }, [avatars]);
 
@@ -91,24 +121,29 @@ export default function Match() {
     }
     const handleCreateAvatar = (event: any) => {
         event.preventDefault();
-        socket.timeout(5000).emit('create-box', roomId, avatarFormValue, userId, () => {});
+        socket.timeout(5000).emit(
+            'create-box',
+            roomId,
+            avatarFormValue,
+            userId,
+            () => {}
+        );
     };
 
-    const handleStopMovement = (avatar: any, e: any, ui: any) => {
-        console.log(e);
-        socket.timeout(5000).emit('move-box', roomId, avatar.avatarName, { x: ui.x, y: ui.y }, userId)
+    const handleStopMovement = (avatar: any, _e: any, ui: any) => {
+        if (avatar.userId === userId)
+            socket.timeout(5000).emit('move-box', roomId, avatar.avatarName, { x: ui.x, y: ui.y }, userId)
     }
 
-    const handleStartMovement = (avatar: any) => {
-        if (avatar.userId !== userId) {
-            return false;
-        }
+    const handleResizeStop = (avatar: any, _e: any, ref: any) => {
+        if (avatar.userId === userId)
+            socket.emit('resize-box', roomId, avatar.avatarName, { width: ref.style.width, height: ref.style.height });
     }
 
-    // const handleRoleInput = (event: any) => {
-    //     const { value } = event.target;
-    //     setUserRole(value);
-    // }
+    const handleDeleteAvatar = (avatar: any) => {
+        if (avatar.userId !== userId) return;
+        socket.emit('delete-box', roomId, avatar.avatarName);
+    }
 
     return (
         <section className="match-page">
@@ -127,7 +162,6 @@ export default function Match() {
 
                     <button type="submit">Criar Avatar</button>
                 </form>
-                {/* <input type="text" value={userRole} onChange={handleRoleInput} disabled={userId ? true : false}/> */}
                 <button>Excluir Avatar</button>
             </div>
 
@@ -143,19 +177,44 @@ export default function Match() {
 
             <div className="match-map">
                 {avatars.map((avatar, index) => {
-                    return (<Draggable
-                        key={index}
-                        defaultPosition={{ x: avatar.position.x, y: avatar.position.y }}
-                        position={{ x: avatar.position.x, y: avatar.position.y }}
-                        onStart={() => handleStartMovement(avatar)}
-                        onStop={(e, ui) => handleStopMovement(avatar, e, ui)}
-                    >
-                        <div className="avatar">
-                            <p>
-                                {avatar.avatarName} - {index}
-                            </p>
-                        </div>
-                    </Draggable>)
+                    return (
+                        <Rnd
+                            size={{ width: avatar.size.width, height: avatar.size.height }}
+                            position={{ x: avatar.position.x, y: avatar.position.y }}
+                            default={{ x: avatar.position.x, y: avatar.position.y, width: avatar.size.width, height: avatar.size.height  }}
+                            onDragStop={(e, ui) => handleStopMovement(avatar, e, ui)}
+                            bounds="parent"
+                            onResizeStop={(e, _direction, ref, _delta, _position) => handleResizeStop(avatar, e, ref)}
+                        >
+                            <div className="avatar">
+                                <button
+                                    type="button"
+                                    onClick={() => handleDeleteAvatar(avatar)}
+                                >
+                                    X
+                                </button>
+                                <p>
+                                    {avatar.avatarName} - {index}
+                                </p>
+                            </div>
+                        </Rnd>
+                            // <Draggable
+                            //     key={index}
+                            //     defaultPosition={{ x: avatar.position.x, y: avatar.position.y }}
+                            //     position={{ x: avatar.position.x, y: avatar.position.y }}
+                            //     onStart={() => handleStartMovement(avatar)}
+                            //     onStop={(e, ui) => handleStopMovement(avatar, e, ui)}
+                            // >
+                                // <Resizable
+                                //     height={avatar.size.height}
+                                //     width={avatar.size.width}
+                                //     onResize={() => handleResize(avatar)}
+                                //     onResizeStop={handleResizeStop}
+                                // >
+                                    
+                                // </Resizable>
+                            // </Draggable>
+                    )
                 })}
             </div>
         </section>
