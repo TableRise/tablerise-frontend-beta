@@ -198,22 +198,6 @@ export default function Match() {
                                 </p>
                             </div>
                         </Rnd>
-                            // <Draggable
-                            //     key={index}
-                            //     defaultPosition={{ x: avatar.position.x, y: avatar.position.y }}
-                            //     position={{ x: avatar.position.x, y: avatar.position.y }}
-                            //     onStart={() => handleStartMovement(avatar)}
-                            //     onStop={(e, ui) => handleStopMovement(avatar, e, ui)}
-                            // >
-                                // <Resizable
-                                //     height={avatar.size.height}
-                                //     width={avatar.size.width}
-                                //     onResize={() => handleResize(avatar)}
-                                //     onResizeStop={handleResizeStop}
-                                // >
-                                    
-                                // </Resizable>
-                            // </Draggable>
                     )
                 })}
             </div>
